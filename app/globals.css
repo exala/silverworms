@@ -1,0 +1,36 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-silver-grid min-h-screen text-silver-900 antialiased;
+  }
+
+  * {
+    @apply box-border;
+  }
+
+  a {
+    @apply text-inherit no-underline;
+  }
+
+  input,
+  textarea,
+  select {
+    @apply w-full rounded-2xl border border-silver-200 bg-white/95 px-4 py-3.5 text-sm text-silver-900 shadow-sm outline-none transition duration-150 placeholder:text-silver-400 focus:border-silver-400 focus:ring-4 focus:ring-silver-200/60;
+  }
+
+  textarea {
+    @apply min-h-32 resize-y;
+  }
+
+  th,
+  td {
+    @apply align-top;
+  }
+}
