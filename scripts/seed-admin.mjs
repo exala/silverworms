@@ -48,7 +48,7 @@ if (!supabaseUrl || !serviceRoleKey) {
   process.exit(1);
 }
 
-const adminEmail = "admin@silverworm.com";
+const adminEmail = "admin@silverworms.com";
 const adminPassword = "admin123";
 
 const supabase = createClient(supabaseUrl, serviceRoleKey, {

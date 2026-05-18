@@ -8,7 +8,7 @@ export default function ContactPage() {
         Talk to the SILVERWORMS team.
       </h1>
       <p className="mt-4 max-w-3xl text-base leading-8 text-silver-600">
-        Use this page as the public contact surface for driver support, brand
+        Use this page as the contact surface for driver support, brand
         outreach, or partnership conversations.
       </p>
       <div className="mt-6 grid gap-5 md:grid-cols-2">
@@ -16,7 +16,7 @@ export default function ContactPage() {
           <h2 className="text-2xl font-semibold tracking-[-0.04em] text-silver-900">
             Business Inquiries
           </h2>
-          <p className="mt-3 font-medium text-silver-800">sales@silverworm.com</p>
+          <p className="mt-3 font-medium text-silver-800">sales@silverworms.com</p>
           <p className="mt-2 text-sm leading-7 text-silver-600">
             For brand campaigns, fleet partnerships, and city launches.
           </p>
@@ -25,7 +25,7 @@ export default function ContactPage() {
           <h2 className="text-2xl font-semibold tracking-[-0.04em] text-silver-900">
             Driver Support
           </h2>
-          <p className="mt-3 font-medium text-silver-800">support@silverworm.com</p>
+          <p className="mt-3 font-medium text-silver-800">support@silverworms.com</p>
           <p className="mt-2 text-sm leading-7 text-silver-600">
             For onboarding questions, installation scheduling, and payouts.
           </p>

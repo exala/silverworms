@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { signOutAction } from "@/app/actions/auth";
 import { requireAdmin } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 
@@ -21,11 +20,20 @@ export default async function AdminPage(props: {
   const searchParams = await props.searchParams;
   const supabase = await createClient();
 
-  const [{ count: driverCount }, { count: companyCount }, { count: campaignCount }] =
+  const [
+    { count: driverCount },
+    { count: companyCount },
+    { count: campaignCount },
+    { count: liveCampaignCount },
+  ] =
     await Promise.all([
       supabase.from("driver_profiles").select("*", { count: "exact", head: true }),
       supabase.from("company_profiles").select("*", { count: "exact", head: true }),
       supabase.from("campaigns").select("*", { count: "exact", head: true }),
+      supabase
+        .from("campaigns")
+        .select("*", { count: "exact", head: true })
+        .eq("status", "LIVE"),
     ]);
   const { data: campaigns } = await supabase
     .from("campaigns")
@@ -46,18 +54,13 @@ export default async function AdminPage(props: {
           {searchParams.success}
         </p>
       ) : null}
-      <div className="mt-6 grid gap-4 md:grid-cols-3">
+      <div className="mt-6 grid gap-4 md:grid-cols-4">
         <StatCard label="Registered drivers" value={driverCount || 0} />
         <StatCard label="Registered companies" value={companyCount || 0} />
-        <StatCard label="Campaigns" value={campaignCount || 0} />
+        <StatCard label="Total campaigns" value={campaignCount || 0} />
+        <StatCard label="Live campaigns" value={liveCampaignCount || 0} />
       </div>
       <div className="mt-6 flex flex-wrap gap-4">
-        <Link
-          className="inline-flex min-h-14 items-center justify-center rounded-full bg-silver-900 px-7 py-4 text-sm font-semibold text-white shadow-float transition hover:bg-silver-700"
-          href="/admin/campaigns/new"
-        >
-          Add campaign
-        </Link>
         <Link
           className="inline-flex min-h-14 items-center justify-center rounded-full border border-silver-200 bg-white px-7 py-4 text-sm font-semibold text-silver-800 transition hover:border-silver-300 hover:bg-silver-50"
           href="/admin/drivers"
@@ -70,14 +73,6 @@ export default async function AdminPage(props: {
         >
           Companies
         </Link>
-        <form action={signOutAction}>
-          <button
-            className="inline-flex min-h-14 items-center justify-center rounded-full border border-silver-200 bg-white px-7 py-4 text-sm font-semibold text-silver-800 transition hover:border-silver-300 hover:bg-silver-50"
-            type="submit"
-          >
-            Sign out
-          </button>
-        </form>
       </div>
       <div className="mt-6 overflow-hidden rounded-[1.8rem] border border-silver-200/80 bg-white/90 shadow-sm">
         <div className="border-b border-silver-200/80 px-6 py-5">

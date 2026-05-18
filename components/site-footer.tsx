@@ -4,12 +4,12 @@ export function SiteFooter() {
       <div className="max-w-xl">
         <strong className="block text-base font-semibold text-silver-900">SILVERWORMS</strong>
         <p className="mt-1">
-          LED-powered vehicle advertising for ride-hailing fleets, brands, and
-          urban campaigns.
+          LED-powered in-car passenger advertising for ride-hailing fleets and
+          brands.
         </p>
       </div>
       <div>
-        <p>Karachi ready, US-inspired, built for measurable street-level reach.</p>
+        <p>Built for passenger attention inside active city rides.</p>
       </div>
     </footer>
   );

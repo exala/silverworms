@@ -16,7 +16,7 @@ export default async function SignInPage(props: {
       </h1>
       <p className="mt-4 text-base leading-8 text-silver-600">
         Drivers, companies, and admins can sign in here. Admin seeding is set up for{" "}
-        <strong>admin@silverworm.com</strong>.
+        <strong>admin@silverworms.com</strong>.
       </p>
       {searchParams.error ? (
         <p className="mt-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">

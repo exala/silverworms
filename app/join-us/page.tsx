@@ -41,8 +41,8 @@ export default function JoinUsPage() {
             Register as a Company
           </h2>
           <p className="mt-3 text-sm leading-7 text-silver-600">
-            For brands and agencies that want to run public advertising on
-            moving vehicles with flexible rate durations.
+            For brands and agencies that want to run in-car passenger ads with
+            campaign budgets starting as low as Rs. 10,000.
           </p>
         </Link>
       </div>

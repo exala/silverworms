@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { signOutAction } from "@/app/actions/auth";
 import { getCurrentProfile } from "@/lib/auth";
 import Image from "next/image";
 import Logo from "../app/icon.png";
@@ -44,12 +45,35 @@ export async function SiteHeader() {
             </Link>
           ))}
           {profile ? (
-            <Link
-              className="rounded-full bg-silver-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-silver-700"
-              href={profile.role === "ADMIN" ? "/admin" : "/dashboard"}
-            >
-              Dashboard
-            </Link>
+            <>
+              <Link
+                className="rounded-full bg-silver-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-silver-700"
+                href={profile.role === "ADMIN" ? "/admin" : "/dashboard"}
+              >
+                Dashboard
+              </Link>
+              <details className="group relative">
+                <summary className="flex h-11 w-11 cursor-pointer list-none items-center justify-center rounded-full bg-silver-900 text-sm font-semibold uppercase text-white shadow-sm transition hover:bg-silver-700 [&::-webkit-details-marker]:hidden">
+                  {(profile.full_name || profile.email || "U").slice(0, 1)}
+                </summary>
+                <div className="absolute right-0 top-13 z-40 w-56 rounded-2xl border border-silver-200 bg-white p-3 text-sm shadow-float">
+                  <div className="border-b border-silver-100 px-2 pb-3">
+                    <p className="font-semibold text-silver-900">
+                      {profile.full_name || "SILVERWORMS user"}
+                    </p>
+                    <p className="mt-1 truncate text-xs text-silver-500">{profile.email}</p>
+                  </div>
+                  <form action={signOutAction} className="pt-3">
+                    <button
+                      className="w-full rounded-xl px-3 py-2 text-left font-medium text-silver-700 transition hover:bg-silver-100 hover:text-silver-900"
+                      type="submit"
+                    >
+                      Sign out
+                    </button>
+                  </form>
+                </div>
+              </details>
+            </>
           ) : (
             <Link
               className="rounded-full bg-silver-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-silver-700"

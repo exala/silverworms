@@ -5,12 +5,12 @@ export default function AboutPage() {
         About
       </p>
       <h1 className="mt-4 text-4xl font-semibold tracking-[-0.05em] text-silver-900 md:text-5xl">
-        Street-level advertising with a driver-first model.
+        In-car advertising with a driver-first model.
       </h1>
       <p className="mt-4 max-w-3xl text-base leading-8 text-silver-600">
         SILVERWORMS is designed for ride-hailing ecosystems where drivers
-        need new income channels and companies want campaigns that stay visible
-        in public throughout the day.
+        need new income channels and companies want campaigns that reach
+        passengers throughout the day.
       </p>
       <div className="mt-6 grid gap-5 md:grid-cols-3">
         <div className="rounded-[1.8rem] border border-silver-200/80 bg-white/90 p-6 shadow-sm">
@@ -27,7 +27,7 @@ export default function AboutPage() {
           </h2>
           <p className="mt-3 text-sm leading-7 text-silver-600">
             Companies create an account, complete NTN and FBR information, and
-            submit campaigns that can be priced per hour, day, week, or minute.
+            submit campaigns for in-car passenger screens.
           </p>
         </div>
         <div className="rounded-[1.8rem] border border-silver-200/80 bg-white/90 p-6 shadow-sm">
@@ -36,7 +36,7 @@ export default function AboutPage() {
           </h2>
           <p className="mt-3 text-sm leading-7 text-silver-600">
             Admin users oversee onboarding, review driver and company records,
-            and configure the campaigns that will run on LED-equipped cars.
+            and monitor the campaigns that run on LED-equipped cars.
           </p>
         </div>
       </div>

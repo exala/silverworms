@@ -10,7 +10,6 @@ type CampaignValues = {
   campaign_name?: string | null;
   status?: string | null;
   ad_format?: string | null;
-  headline?: string | null;
   start_at?: string | null;
   end_at?: string | null;
   rate_amount?: number | null;
@@ -110,24 +109,14 @@ export function CampaignForm({
             </select>
           </label>
         </div>
-        <div className="grid gap-5 md:grid-cols-2">
-          <label className={labelClass}>
-            Ad format
-            <select defaultValue={initialValues?.ad_format || "STATIC"} name="adFormat">
-              <option value="STATIC">Static image</option>
-              <option value="VIDEO">Video loop</option>
-              <option value="SLIDESHOW">Slideshow</option>
-            </select>
-          </label>
-          <label className={labelClass}>
-            Headline
-            <input
-              defaultValue={initialValues?.headline || ""}
-              name="headline"
-              placeholder="Main message shown to the public"
-            />
-          </label>
-        </div>
+        <label className={labelClass}>
+          Ad format
+          <select defaultValue={initialValues?.ad_format || "STATIC"} name="adFormat">
+            <option value="STATIC">Static image</option>
+            <option value="VIDEO">Video loop</option>
+            <option value="SLIDESHOW">Slideshow</option>
+          </select>
+        </label>
         <div className="grid gap-5 md:grid-cols-2">
           <label className={labelClass}>
             Start date and time
@@ -191,22 +180,33 @@ export function CampaignForm({
             />
           </label>
           <label className={labelClass}>
-            Creative URL
+            Upload creative file
             <input
-              defaultValue={initialValues?.creative_url || ""}
-              name="creativeUrl"
-              placeholder="https://..."
-              type="url"
+              accept="image/*,video/*,.pdf"
+              name="creativeFile"
+              type="file"
             />
+            {initialValues?.creative_url ? (
+              <a
+                className="text-xs font-medium text-silver-600 underline-offset-4 hover:underline"
+                href={initialValues.creative_url}
+                rel="noreferrer"
+                target="_blank"
+              >
+                Current creative file
+              </a>
+            ) : null}
           </label>
         </div>
         <label className={labelClass}>
           Target cities
-          <input
-            defaultValue={initialValues?.target_cities?.join(", ") || ""}
+          <select
+            defaultValue={initialValues?.target_cities?.[0] || "Islamabad"}
             name="targetCities"
-            placeholder="Karachi, Lahore, Islamabad"
-          />
+          >
+            <option value="Islamabad">Islamabad</option>
+            <option value="Rawalpindi">Rawalpindi</option>
+          </select>
         </label>
         <label className={labelClass}>
           Notes

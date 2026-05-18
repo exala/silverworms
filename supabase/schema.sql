@@ -77,7 +77,6 @@ create table if not exists public.campaigns (
   campaign_name text not null,
   status text not null default 'DRAFT',
   ad_format text not null default 'STATIC',
-  headline text,
   start_at timestamptz,
   end_at timestamptz,
   budget numeric(12,2),
@@ -85,10 +84,38 @@ create table if not exists public.campaigns (
   rate_unit text not null check (rate_unit in ('minute', 'hour', 'day', 'week')),
   rate_value integer not null check (rate_value between 1 and 20),
   creative_url text,
+  creative_file_id text,
   target_cities text[] default '{}',
   notes text,
   created_at timestamptz not null default timezone('utc'::text, now()),
   updated_at timestamptz not null default timezone('utc'::text, now())
+);
+
+alter table public.campaigns
+  drop column if exists headline;
+
+alter table public.campaigns
+  add column if not exists creative_file_id text;
+
+create table if not exists public.driver_payout_methods (
+  user_id uuid primary key references public.driver_profiles(user_id) on delete cascade,
+  method_type text,
+  account_title text,
+  account_number text,
+  bank_name text,
+  notes text,
+  created_at timestamptz not null default timezone('utc'::text, now()),
+  updated_at timestamptz not null default timezone('utc'::text, now())
+);
+
+create table if not exists public.driver_earnings (
+  id uuid primary key default gen_random_uuid(),
+  driver_id uuid not null references public.driver_profiles(user_id) on delete cascade,
+  campaign_id uuid references public.campaigns(id) on delete set null,
+  amount numeric(12,2) not null default 0,
+  earned_at timestamptz not null default timezone('utc'::text, now()),
+  notes text,
+  created_at timestamptz not null default timezone('utc'::text, now())
 );
 
 create or replace function public.handle_new_user()
@@ -142,10 +169,17 @@ create trigger set_campaigns_updated_at
   before update on public.campaigns
   for each row execute procedure public.set_updated_at();
 
+drop trigger if exists set_driver_payout_methods_updated_at on public.driver_payout_methods;
+create trigger set_driver_payout_methods_updated_at
+  before update on public.driver_payout_methods
+  for each row execute procedure public.set_updated_at();
+
 alter table public.profiles enable row level security;
 alter table public.driver_profiles enable row level security;
 alter table public.company_profiles enable row level security;
 alter table public.campaigns enable row level security;
+alter table public.driver_payout_methods enable row level security;
+alter table public.driver_earnings enable row level security;
 
 create or replace function public.is_admin()
 returns boolean
@@ -203,3 +237,29 @@ create policy "campaign admin and owner access"
       where user_id = auth.uid() and user_id = company_id
     )
   );
+
+drop policy if exists "driver payout own access" on public.driver_payout_methods;
+create policy "driver payout own access"
+  on public.driver_payout_methods for all
+  using (auth.uid() = user_id or public.is_admin())
+  with check (auth.uid() = user_id or public.is_admin());
+
+drop policy if exists "driver earnings access" on public.driver_earnings;
+create policy "driver earnings access"
+  on public.driver_earnings for select
+  using (
+    auth.uid() = driver_id
+    or public.is_admin()
+    or exists (
+      select 1
+      from public.campaigns
+      where campaigns.id = driver_earnings.campaign_id
+        and campaigns.company_id = auth.uid()
+    )
+  );
+
+drop policy if exists "driver earnings admin write" on public.driver_earnings;
+create policy "driver earnings admin write"
+  on public.driver_earnings for all
+  using (public.is_admin())
+  with check (public.is_admin());
