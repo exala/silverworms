@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { FormPendingOverlay, PendingSubmitButton } from "@/components/form-status";
 
 type CompanyOption = {
   user_id: string;
@@ -216,12 +217,8 @@ export function CampaignForm({
             placeholder="Placement notes, audience notes, compliance remarks, display schedule..."
           />
         </label>
-        <button
-          className="inline-flex min-h-14 items-center justify-center rounded-full bg-silver-900 px-7 py-4 text-sm font-semibold text-white shadow-float transition hover:bg-silver-700"
-          type="submit"
-        >
-          {submitLabel}
-        </button>
+        <PendingSubmitButton idleLabel={submitLabel} pendingLabel="Saving campaign..." />
+        <FormPendingOverlay label="Saving campaign and uploading creative..." />
       </form>
     </section>
   );
