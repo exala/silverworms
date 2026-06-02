@@ -7,7 +7,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "seed:admin": "node scripts/seed-admin.mjs"
+    "seed:admin": "node scripts/seed-admin.mjs",
+    "seed:driver": "node scripts/seed-driver.mjs",
+    "seed:company": "node scripts/seed-company.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.5.2",
