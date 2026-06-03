@@ -24,6 +24,8 @@ Role-based Next.js + Supabase starter for a ride-hailing LED advertising platfor
 ## Notes
 
 - Set your Supabase email redirect URL to `http://localhost:3000/auth/callback` during local development.
+- In Vercel, set `NEXT_PUBLIC_SITE_URL` to your production origin, for example `https://your-domain.com`, without a trailing slash.
+- In Supabase Auth URL Configuration: add `https://your-domain.com` to SITE URL & add both `http://localhost:3000/**` and your production callback URL, for example `https://your-domain.com/**`, to the allowed Redirect URLs.
 - Driver and company signup starts with email only, then redirects to `/complete-registration` after verification.
 - You can change the admin password later from Supabase Auth, or replace the auth provider entirely when you move to Clerk.
 
