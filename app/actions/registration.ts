@@ -48,7 +48,8 @@ export async function completeRegistrationAction(formData: FormData) {
   }
 
   const fullName = String(formData.get("fullName") || "").trim();
-  const phone = String(formData.get("phone") || "").trim();
+  const phoneFromForm = String(formData.get("phone") || "").trim();
+  const phone = profile.role === "DRIVER" ? phoneFromForm || user.phone || "" : phoneFromForm;
   const city = String(formData.get("city") || "").trim();
   const country = String(formData.get("country") || "").trim();
   const termsAccepted = String(formData.get("termsAccepted") || "").trim();

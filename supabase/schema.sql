@@ -12,7 +12,7 @@ $$;
 
 create table if not exists public.profiles (
   id uuid primary key references auth.users(id) on delete cascade,
-  email text unique not null,
+  email text unique,
   role text not null check (role in ('ADMIN', 'DRIVER', 'COMPANY')),
   full_name text,
   phone text,
@@ -22,6 +22,13 @@ create table if not exists public.profiles (
   created_at timestamptz not null default timezone('utc'::text, now()),
   updated_at timestamptz not null default timezone('utc'::text, now())
 );
+
+alter table public.profiles
+  alter column email drop not null;
+
+create unique index if not exists profiles_phone_key
+  on public.profiles (phone)
+  where phone is not null;
 
 create table if not exists public.driver_profiles (
   user_id uuid primary key references public.profiles(id) on delete cascade,
@@ -133,10 +140,11 @@ begin
     requested_role := 'DRIVER';
   end if;
 
-  insert into public.profiles (id, email, role)
-  values (new.id, new.email, requested_role)
+  insert into public.profiles (id, email, phone, role)
+  values (new.id, new.email, new.phone, requested_role)
   on conflict (id) do update
     set email = excluded.email,
+        phone = excluded.phone,
         role = excluded.role,
         updated_at = timezone('utc'::text, now());
 

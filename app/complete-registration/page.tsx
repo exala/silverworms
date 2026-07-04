@@ -104,7 +104,7 @@ function CompanyFields() {
 export default async function CompleteRegistrationPage(props: {
   searchParams: Promise<{ error?: string }>;
 }) {
-  await requireUser();
+  const user = await requireUser();
   const profile = await getCurrentProfile();
   const searchParams = await props.searchParams;
 
@@ -125,8 +125,9 @@ export default async function CompleteRegistrationPage(props: {
         Finish your {profile.role.toLowerCase()} account setup.
       </h1>
       <p className="mt-4 text-base leading-8 text-silver-600">
-        Your email is verified. Add the remaining details below so your account can
-        be reviewed and activated properly.
+        Your {profile.role === "DRIVER" ? "phone number" : "email"} is verified.
+        Add the remaining details below so your account can be reviewed and
+        activated properly.
       </p>
       {searchParams.error ? (
         <p className="mt-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
@@ -139,10 +140,21 @@ export default async function CompleteRegistrationPage(props: {
             Full name
             <input defaultValue={profile.full_name || ""} name="fullName" required />
           </label>
-          <label className={labelClass}>
-            Phone number
-            <input defaultValue={profile.phone || ""} name="phone" required />
-          </label>
+          {profile.role === "DRIVER" ? (
+            <label className={labelClass}>
+              Verified phone number
+              <input
+                disabled
+                value={profile.phone || user.phone || ""}
+              />
+              <input name="phone" type="hidden" value={profile.phone || user.phone || ""} />
+            </label>
+          ) : (
+            <label className={labelClass}>
+              Phone number
+              <input defaultValue={profile.phone || ""} name="phone" required />
+            </label>
+          )}
         </div>
         <div className="grid gap-5 md:grid-cols-2">
           <label className={labelClass}>

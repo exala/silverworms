@@ -2,7 +2,7 @@ import { type NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 
 const protectedPrefixes = ["/dashboard", "/admin", "/complete-registration"];
-const guestOnlyPrefixes = ["/sign-in", "/sign-up", "/join-us", "/check-email"];
+const guestOnlyPrefixes = ["/sign-in", "/sign-up", "/join-us", "/check-email", "/check-phone"];
 
 export async function middleware(request: NextRequest) {
   let response = NextResponse.next({
@@ -122,5 +122,6 @@ export const config = {
     "/sign-up",
     "/join-us/:path*",
     "/check-email",
+    "/check-phone",
   ],
 };
