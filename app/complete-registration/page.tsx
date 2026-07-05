@@ -3,6 +3,7 @@ import { completeRegistrationAction } from "@/app/actions/registration";
 import { CompanyTermsModal } from "@/components/company-terms-modal";
 import { FormPendingOverlay, PendingSubmitButton } from "@/components/form-status";
 import { getCurrentProfile, requireUser } from "@/lib/auth";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 const labelClass = "grid gap-2 text-sm font-semibold text-silver-700";
 
@@ -101,15 +102,47 @@ function CompanyFields() {
   );
 }
 
+function getPendingRole(user: Awaited<ReturnType<typeof requireUser>>) {
+  const role = String(user.user_metadata?.pending_role || "").toUpperCase();
+
+  if (role === "DRIVER" || role === "COMPANY") {
+    return role;
+  }
+
+  return user.phone ? "DRIVER" : "COMPANY";
+}
+
 export default async function CompleteRegistrationPage(props: {
   searchParams: Promise<{ error?: string }>;
 }) {
   const user = await requireUser();
-  const profile = await getCurrentProfile();
+  let profile = await getCurrentProfile();
   const searchParams = await props.searchParams;
 
   if (!profile) {
-    return null;
+    const supabaseAdmin = createAdminClient();
+    const { data, error } = await supabaseAdmin
+      .from("profiles")
+      .upsert({
+        id: user.id,
+        email: user.email || null,
+        phone: user.phone || null,
+        role: getPendingRole(user),
+        registration_completed: false,
+      })
+      .select("*")
+      .single();
+
+    if (error) {
+      return (
+        <section className="mx-auto mt-8 w-[min(780px,calc(100%-2rem))] rounded-[2rem] border border-red-200 bg-red-50 p-6 text-red-700 shadow-haze md:p-8">
+          <p className="text-sm font-semibold">We could not prepare your profile.</p>
+          <p className="mt-2 text-sm">{error.message}</p>
+        </section>
+      );
+    }
+
+    profile = data;
   }
 
   if (profile.registration_completed) {

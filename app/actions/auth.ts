@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
+import type { User } from "@supabase/supabase-js";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
@@ -34,10 +35,30 @@ function getPakistaniPhoneSearchValues(rawPhone: string) {
 
   if (normalizedPhone) {
     values.add(normalizedPhone);
+    values.add(normalizedPhone.replace(/\D/g, ""));
+
+    const normalizedDigits = normalizedPhone.replace(/\D/g, "");
+
+    if (/^923\d{9}$/.test(normalizedDigits)) {
+      values.add(`0${normalizedDigits.slice(2)}`);
+    }
   }
 
   if (/^03\d{9}$/.test(digits)) {
     values.add(digits);
+  }
+
+  if (/^923\d{9}$/.test(digits)) {
+    values.add(digits);
+    values.add(`+${digits}`);
+    values.add(`0${digits.slice(2)}`);
+  }
+
+  if (/^3\d{9}$/.test(digits)) {
+    values.add(digits);
+    values.add(`+92${digits}`);
+    values.add(`92${digits}`);
+    values.add(`0${digits}`);
   }
 
   return Array.from(values);
@@ -58,11 +79,11 @@ async function profileExistsByEmail(email: string) {
   return Boolean(data);
 }
 
-async function profileExistsByPhone(phoneValues: string[]) {
+async function getProfileByPhone(phoneValues: string[]) {
   const supabaseAdmin = createAdminClient();
   const { data, error } = await supabaseAdmin
     .from("profiles")
-    .select("id")
+    .select("id, role, registration_completed")
     .in("phone", phoneValues)
     .limit(1);
 
@@ -70,7 +91,118 @@ async function profileExistsByPhone(phoneValues: string[]) {
     redirect(`/join-us/driver?error=${encodeURIComponent(error.message)}`);
   }
 
-  return Boolean(data?.length);
+  return data?.[0] || null;
+}
+
+async function getDriverRegistrationByPhone(phoneValues: string[]) {
+  const supabaseAdmin = createAdminClient();
+  const { data, error } = await supabaseAdmin
+    .rpc("find_driver_registration_by_phone", { phone_values: phoneValues })
+    .maybeSingle();
+
+  if (error) {
+    redirect(
+      `/join-us/driver?error=${encodeURIComponent("Phone registration check is not configured. Please run the latest Supabase schema migration before sending OTP.")}`,
+    );
+  }
+
+  return data as null | {
+    user_id: string;
+    registration_completed: boolean;
+    source: string;
+  };
+}
+
+async function getProfileByUserId(userId: string) {
+  const supabaseAdmin = createAdminClient();
+  const { data, error } = await supabaseAdmin
+    .from("profiles")
+    .select("id, role, registration_completed")
+    .eq("id", userId)
+    .maybeSingle();
+
+  if (error) {
+    redirect(`/join-us/driver?error=${encodeURIComponent(error.message)}`);
+  }
+
+  return data;
+}
+
+async function getAuthUserByPhone(phoneValues: string[]) {
+  const supabaseAdmin = createAdminClient();
+  let page = 1;
+  const comparablePhoneValues = new Set(
+    phoneValues.flatMap((value) => getPakistaniPhoneSearchValues(value)),
+  );
+
+  while (page <= 10) {
+    const { data, error } = await supabaseAdmin.auth.admin.listUsers({
+      page,
+      perPage: 1000,
+    });
+
+    if (error) {
+      redirect(`/join-us/driver?error=${encodeURIComponent(error.message)}`);
+    }
+
+    const user = data.users.find((candidate) => {
+      const candidateValues = getPakistaniPhoneSearchValues(candidate.phone || "");
+      return candidateValues.some((value) => comparablePhoneValues.has(value));
+    });
+
+    if (user) {
+      return user;
+    }
+
+    if (data.users.length < 1000) {
+      return null;
+    }
+
+    page += 1;
+  }
+
+  return null;
+}
+
+async function ensurePendingDriverProfile(user: User, phone: string) {
+  const supabaseAdmin = createAdminClient();
+  const { error } = await supabaseAdmin.from("profiles").upsert({
+    id: user.id,
+    email: user.email || null,
+    phone: user.phone || phone,
+    role: "DRIVER",
+    registration_completed: false,
+  });
+
+  if (error) {
+    redirect(`/join-us/driver?error=${encodeURIComponent(error.message)}`);
+  }
+}
+
+async function sendDriverPhoneOtp({
+  phone,
+  shouldCreateUser,
+}: {
+  phone: string;
+  shouldCreateUser: boolean;
+}) {
+  const supabase = await createClient();
+  const { error } = await supabase.auth.signInWithOtp({
+    phone,
+    options: {
+      channel: "sms",
+      shouldCreateUser,
+      data: {
+        pending_role: "DRIVER",
+      },
+    },
+  });
+
+  if (error) {
+    redirect(`/join-us/driver?error=${encodeURIComponent(error.message)}`);
+  }
+
+  redirect(`/check-phone?phone=${encodeURIComponent(phone)}&expires=60`);
 }
 
 export async function signInAction(formData: FormData) {
@@ -187,7 +319,90 @@ export async function sendDriverOtpAction(formData: FormData) {
     );
   }
 
-  if (await profileExistsByPhone(getPakistaniPhoneSearchValues(rawPhone))) {
+  const phoneValues = getPakistaniPhoneSearchValues(rawPhone);
+  const existingRegistration = await getDriverRegistrationByPhone(phoneValues);
+
+  if (existingRegistration?.registration_completed) {
+    redirect(
+      `/join-us/driver?error=${encodeURIComponent("This phone number is already registered. Please sign in instead.")}`,
+    );
+  }
+
+  if (existingRegistration && !existingRegistration.registration_completed) {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (user?.id === existingRegistration.user_id) {
+      redirect("/complete-registration");
+    }
+
+    await sendDriverPhoneOtp({ phone, shouldCreateUser: false });
+  }
+
+  const existingProfile = await getProfileByPhone(phoneValues);
+
+  if (existingProfile?.registration_completed) {
+    redirect(
+      `/join-us/driver?error=${encodeURIComponent("This phone number is already registered. Please sign in instead.")}`,
+    );
+  }
+
+  if (existingProfile && !existingProfile.registration_completed) {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (user?.id === existingProfile.id) {
+      redirect("/complete-registration");
+    }
+
+    await sendDriverPhoneOtp({ phone, shouldCreateUser: false });
+  }
+
+  const existingAuthUser = await getAuthUserByPhone(getPakistaniPhoneSearchValues(rawPhone));
+
+  if (existingAuthUser) {
+    const profileByAuthUser = await getProfileByUserId(existingAuthUser.id);
+
+    if (profileByAuthUser?.registration_completed) {
+      redirect(
+        `/join-us/driver?error=${encodeURIComponent("This phone number is already registered. Please sign in instead.")}`,
+      );
+    }
+
+    await ensurePendingDriverProfile(existingAuthUser, phone);
+
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (user?.id === existingAuthUser.id) {
+      redirect("/complete-registration");
+    }
+
+    await sendDriverPhoneOtp({ phone, shouldCreateUser: false });
+  }
+
+  await sendDriverPhoneOtp({ phone, shouldCreateUser: true });
+}
+
+export async function resendDriverOtpAction(formData: FormData) {
+  const rawPhone = String(formData.get("phone") || "").trim();
+  const phone = normalizePakistaniPhone(rawPhone) || rawPhone;
+
+  if (!phone) {
+    redirect("/join-us/driver?error=Phone number is required.");
+  }
+
+  const existingRegistration = await getDriverRegistrationByPhone(
+    getPakistaniPhoneSearchValues(phone),
+  );
+
+  if (existingRegistration?.registration_completed) {
     redirect(
       `/join-us/driver?error=${encodeURIComponent("This phone number is already registered. Please sign in instead.")}`,
     );
@@ -198,18 +413,15 @@ export async function sendDriverOtpAction(formData: FormData) {
     phone,
     options: {
       channel: "sms",
-      shouldCreateUser: true,
-      data: {
-        pending_role: "DRIVER",
-      },
+      shouldCreateUser: false,
     },
   });
 
   if (error) {
-    redirect(`/join-us/driver?error=${encodeURIComponent(error.message)}`);
+    redirect(`/check-phone?phone=${encodeURIComponent(phone)}&error=${encodeURIComponent(error.message)}`);
   }
 
-  redirect(`/check-phone?phone=${encodeURIComponent(phone)}&expires=60`);
+  redirect(`/check-phone?phone=${encodeURIComponent(phone)}&resent=1&expires=60`);
 }
 
 export async function verifyDriverOtpAction(formData: FormData) {
@@ -221,7 +433,7 @@ export async function verifyDriverOtpAction(formData: FormData) {
   }
 
   const supabase = await createClient();
-  const { error } = await supabase.auth.verifyOtp({
+  const { data, error } = await supabase.auth.verifyOtp({
     phone,
     token,
     type: "sms",
@@ -231,6 +443,23 @@ export async function verifyDriverOtpAction(formData: FormData) {
     redirect(
       `/check-phone?phone=${encodeURIComponent(phone)}&error=${encodeURIComponent(error.message)}`,
     );
+  }
+
+  if (data.user) {
+    const supabaseAdmin = createAdminClient();
+    const { error: profileError } = await supabaseAdmin.from("profiles").upsert({
+      id: data.user.id,
+      email: data.user.email || null,
+      phone: data.user.phone || phone,
+      role: "DRIVER",
+      registration_completed: false,
+    });
+
+    if (profileError) {
+      redirect(
+        `/check-phone?phone=${encodeURIComponent(phone)}&error=${encodeURIComponent(profileError.message)}`,
+      );
+    }
   }
 
   redirect("/complete-registration");

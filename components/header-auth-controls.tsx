@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
 type HeaderProfile = {
@@ -13,6 +13,7 @@ type HeaderProfile = {
 
 export function HeaderAuthControls() {
   const router = useRouter();
+  const pathname = usePathname();
   const [profile, setProfile] = useState<HeaderProfile | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -49,6 +50,7 @@ export function HeaderAuthControls() {
       setLoading(false);
     }
 
+    setLoading(true);
     loadProfile();
 
     const {
@@ -62,7 +64,7 @@ export function HeaderAuthControls() {
       active = false;
       subscription.unsubscribe();
     };
-  }, [router]);
+  }, [pathname, router]);
 
   async function handleSignOut() {
     const supabase = createClient();

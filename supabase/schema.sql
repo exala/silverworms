@@ -203,6 +203,58 @@ as $$
   );
 $$;
 
+create or replace function public.find_driver_registration_by_phone(phone_values text[])
+returns table (
+  user_id uuid,
+  registration_completed boolean,
+  source text
+)
+language sql
+stable
+security definer
+set search_path = public, auth
+as $$
+  with normalized_input as (
+    select regexp_replace(value, '\D', '', 'g') as phone_digits
+    from unnest(phone_values) as value
+    where regexp_replace(value, '\D', '', 'g') <> ''
+  ),
+  profile_match as (
+    select
+      profiles.id as user_id,
+      profiles.registration_completed,
+      'profiles'::text as source
+    from public.profiles
+    where profiles.role = 'DRIVER'
+      and (
+        profiles.phone = any(phone_values)
+        or regexp_replace(coalesce(profiles.phone, ''), '\D', '', 'g') in (
+          select phone_digits from normalized_input
+        )
+      )
+    order by profiles.registration_completed desc
+    limit 1
+  ),
+  auth_match as (
+    select
+      users.id as user_id,
+      coalesce(profiles.registration_completed, false) as registration_completed,
+      'auth.users'::text as source
+    from auth.users
+    left join public.profiles on profiles.id = users.id
+    where users.phone = any(phone_values)
+      or regexp_replace(coalesce(users.phone, ''), '\D', '', 'g') in (
+        select phone_digits from normalized_input
+      )
+    limit 1
+  )
+  select * from profile_match
+  union all
+  select * from auth_match
+  where not exists (select 1 from profile_match)
+  limit 1;
+$$;
+
 drop policy if exists "profiles own select" on public.profiles;
 create policy "profiles own select"
   on public.profiles for select

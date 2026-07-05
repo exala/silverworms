@@ -16,7 +16,7 @@ export default async function DriverJoinPage(props: {
         Enter your phone number to start driver registration.
       </h1>
       <p className="mt-4 text-base leading-8 text-silver-600">
-        We will send a WhatsApp OTP to verify your number. After verification, you
+        We will send an OTP to verify your number. After verification, you
         will set your password and complete your driver and vehicle details.
       </p>
       {searchParams.error ? (
@@ -37,7 +37,7 @@ export default async function DriverJoinPage(props: {
           />
         </label>
         <PendingSubmitButton
-          idleLabel="Send WhatsApp OTP"
+          idleLabel="Send OTP"
           pendingLabel="Sending OTP..."
         />
         <FormPendingOverlay label="Sending your driver verification OTP..." />

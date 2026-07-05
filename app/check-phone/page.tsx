@@ -1,4 +1,5 @@
 import { verifyDriverOtpAction } from "@/app/actions/auth";
+import { CheckPhoneResend } from "@/components/check-phone-resend";
 import { FormPendingOverlay, PendingSubmitButton } from "@/components/form-status";
 
 export default async function CheckPhonePage(props: {
@@ -6,7 +7,7 @@ export default async function CheckPhonePage(props: {
 }) {
   const searchParams = await props.searchParams;
   const phone = searchParams.phone || "";
-  const expires = searchParams.expires || "60";
+  const expires = Number.parseInt(searchParams.expires || "60", 10);
 
   return (
     <section className="mx-auto mt-8 w-[min(780px,calc(100%-2rem))] rounded-[2rem] border border-white/70 bg-white/80 p-6 shadow-haze backdrop-blur-xl md:p-8">
@@ -14,7 +15,7 @@ export default async function CheckPhonePage(props: {
         Verify Phone
       </p>
       <h1 className="mt-4 text-4xl font-semibold tracking-[-0.05em] text-silver-900">
-        Enter the OTP sent to WhatsApp.
+        Enter the OTP sent by SMS.
       </h1>
       <p className="mt-4 text-base leading-8 text-silver-600">
         We sent a one-time code to <strong>{phone}</strong>. Use it within{" "}
@@ -41,6 +42,7 @@ export default async function CheckPhonePage(props: {
         <PendingSubmitButton idleLabel="Verify and continue" pendingLabel="Verifying..." />
         <FormPendingOverlay label="Verifying your driver phone number..." />
       </form>
+      <CheckPhoneResend phone={phone} initialSeconds={Number.isNaN(expires) ? 60 : expires} />
     </section>
   );
 }
