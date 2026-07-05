@@ -206,32 +206,30 @@ async function sendDriverPhoneOtp({
 }
 
 export async function signInAction(formData: FormData) {
-  const accountType = String(formData.get("accountType") || "EMAIL").trim().toUpperCase();
-  const email = String(formData.get("email") || "").trim().toLowerCase();
-  const rawPhone = String(formData.get("phone") || "").trim();
-  const phone = accountType === "DRIVER" ? normalizePakistaniPhone(rawPhone) : rawPhone;
+  const identifier = String(formData.get("identifier") || "").trim();
+  const isEmail = identifier.includes("@");
+  const email = isEmail ? identifier.toLowerCase() : "";
+  const phone = isEmail ? null : normalizePakistaniPhone(identifier);
   const password = String(formData.get("password") || "").trim();
   const redirectTo = String(formData.get("redirectTo") || "/dashboard");
 
-  if (!password || (accountType === "DRIVER" ? !phone : !email)) {
-    const message =
-      accountType === "DRIVER"
-        ? "Phone number and password are required."
-        : "Email and password are required.";
-    redirect(`/sign-in?error=${encodeURIComponent(message)}`);
+  if (!identifier || !password) {
+    redirect(
+      `/sign-in?error=${encodeURIComponent("Email or phone number and password are required.")}`,
+    );
   }
 
-  if (accountType === "DRIVER" && !phone) {
+  if (!isEmail && !phone) {
     redirect(
-      `/sign-in?error=${encodeURIComponent("Enter a valid Pakistani mobile number, for example 03013568887.")}`,
+      `/sign-in?error=${encodeURIComponent("Enter a valid email or Pakistani mobile number, for example 03013568887.")}`,
     );
   }
 
   const supabase = await createClient();
   const { error } =
-    accountType === "DRIVER"
-      ? await supabase.auth.signInWithPassword({ phone: phone as string, password })
-      : await supabase.auth.signInWithPassword({ email, password });
+    isEmail
+      ? await supabase.auth.signInWithPassword({ email, password })
+      : await supabase.auth.signInWithPassword({ phone: phone as string, password });
 
   if (error) {
     redirect(`/sign-in?error=${encodeURIComponent(error.message)}`);
@@ -250,11 +248,6 @@ export async function signInAction(formData: FormData) {
 
     if (profile?.role === "ADMIN") {
       redirect("/admin");
-    }
-
-    if (accountType === "DRIVER" && profile?.role !== "DRIVER") {
-      await supabase.auth.signOut();
-      redirect(`/sign-in?error=${encodeURIComponent("Please use the company/admin email sign-in form.")}`);
     }
 
     if (profile && !profile.registration_completed) {
