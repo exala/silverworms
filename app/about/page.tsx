@@ -12,7 +12,7 @@ export default function AboutPage() {
         need new income channels and companies want campaigns that reach
         passengers throughout the day.
       </p>
-      <div className="mt-6 grid gap-5 md:grid-cols-3">
+      <div className="mt-6 grid gap-5 md:grid-cols-2">
         <div className="rounded-[1.8rem] border border-silver-200/80 bg-white/90 p-6 shadow-sm">
           <h2 className="text-2xl font-semibold tracking-[-0.04em] text-silver-900">Drivers</h2>
           <p className="mt-3 text-sm leading-7 text-silver-600">
@@ -28,15 +28,6 @@ export default function AboutPage() {
           <p className="mt-3 text-sm leading-7 text-silver-600">
             Companies create an account, complete NTN and FBR information, and
             submit campaigns for in-car passenger screens.
-          </p>
-        </div>
-        <div className="rounded-[1.8rem] border border-silver-200/80 bg-white/90 p-6 shadow-sm">
-          <h2 className="text-2xl font-semibold tracking-[-0.04em] text-silver-900">
-            Admin Team
-          </h2>
-          <p className="mt-3 text-sm leading-7 text-silver-600">
-            Admin users oversee onboarding, review driver and company records,
-            and monitor the campaigns that run on LED-equipped cars.
           </p>
         </div>
       </div>
