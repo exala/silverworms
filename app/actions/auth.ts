@@ -64,11 +64,11 @@ function getPakistaniPhoneSearchValues(rawPhone: string) {
   return Array.from(values);
 }
 
-async function profileExistsByEmail(email: string) {
+async function getProfileByEmail(email: string) {
   const supabaseAdmin = createAdminClient();
   const { data, error } = await supabaseAdmin
     .from("profiles")
-    .select("id")
+    .select("id, role, registration_completed")
     .eq("email", email)
     .maybeSingle();
 
@@ -76,7 +76,7 @@ async function profileExistsByEmail(email: string) {
     redirect(`/join-us/company?error=${encodeURIComponent(error.message)}`);
   }
 
-  return Boolean(data);
+  return data;
 }
 
 async function getProfileByPhone(phoneValues: string[]) {
@@ -205,6 +205,31 @@ async function sendDriverPhoneOtp({
   redirect(`/check-phone?phone=${encodeURIComponent(phone)}&expires=60`);
 }
 
+async function sendCompanyEmailOtp({
+  email,
+  shouldCreateUser,
+}: {
+  email: string;
+  shouldCreateUser: boolean;
+}) {
+  const supabase = await createClient();
+  const { error } = await supabase.auth.signInWithOtp({
+    email,
+    options: {
+      shouldCreateUser,
+      data: {
+        pending_role: "COMPANY",
+      },
+    },
+  });
+
+  if (error) {
+    redirect(`/join-us/company?error=${encodeURIComponent(error.message)}`);
+  }
+
+  redirect(`/check-email?email=${encodeURIComponent(email)}&role=company&expires=60`);
+}
+
 export async function signInAction(formData: FormData) {
   const identifier = String(formData.get("identifier") || "").trim();
   const isEmail = identifier.includes("@");
@@ -260,42 +285,98 @@ export async function signInAction(formData: FormData) {
 }
 
 export async function sendJoinLinkAction(formData: FormData) {
-  const email = String(formData.get("email") || "").trim();
+  const email = String(formData.get("email") || "").trim().toLowerCase();
   const role = String(formData.get("role") || "").trim().toUpperCase();
 
   if (!email || !["DRIVER", "COMPANY"].includes(role)) {
     redirect("/join-us?error=Please choose a valid registration path.");
   }
 
-  if (role === "COMPANY" && (await profileExistsByEmail(email))) {
+  if (role === "COMPANY") {
+    const existingProfile = await getProfileByEmail(email);
+
+    if (existingProfile?.registration_completed) {
+      redirect(
+        `/join-us/company?error=${encodeURIComponent("This email is already registered. Please sign in instead.")}`,
+      );
+    }
+
+    if (existingProfile && !existingProfile.registration_completed) {
+      const supabase = await createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (user?.id === existingProfile.id) {
+        redirect("/complete-registration");
+      }
+
+      await sendCompanyEmailOtp({ email, shouldCreateUser: false });
+    }
+
+    await sendCompanyEmailOtp({ email, shouldCreateUser: true });
+  }
+
+  redirect("/join-us?error=Please choose a valid registration path.");
+}
+
+export async function resendMagicLinkAction(formData: FormData) {
+  const email = String(formData.get("email") || "").trim().toLowerCase();
+
+  if (!email) {
+    redirect("/join-us/company?error=Email is required.");
+  }
+
+  const existingProfile = await getProfileByEmail(email);
+
+  if (existingProfile?.registration_completed) {
     redirect(
       `/join-us/company?error=${encodeURIComponent("This email is already registered. Please sign in instead.")}`,
     );
   }
 
+  await sendCompanyEmailOtp({ email, shouldCreateUser: false });
+}
+
+export async function verifyCompanyEmailOtpAction(formData: FormData) {
+  const email = String(formData.get("email") || "").trim().toLowerCase();
+  const token = String(formData.get("token") || "").trim();
+
+  if (!email || !token) {
+    redirect(`/check-email?email=${encodeURIComponent(email)}&role=company&error=Email and OTP are required.`);
+  }
+
   const supabase = await createClient();
-  const { error } = await supabase.auth.signInWithOtp({
+  const { data, error } = await supabase.auth.verifyOtp({
     email,
-    options: {
-      shouldCreateUser: true,
-      emailRedirectTo: `${getSiteUrl()}/auth/callback?next=/complete-registration`,
-      data: {
-        pending_role: role,
-      },
-    },
+    token,
+    type: "email",
   });
 
   if (error) {
-    redirect(`/join-us/${role.toLowerCase()}?error=${encodeURIComponent(error.message)}`);
+    redirect(
+      `/check-email?email=${encodeURIComponent(email)}&role=company&error=${encodeURIComponent(error.message)}`,
+    );
   }
 
-  redirect(
-    `/check-email?email=${encodeURIComponent(email)}&role=${role.toLowerCase()}`,
-  );
-}
+  if (data.user) {
+    const supabaseAdmin = createAdminClient();
+    const { error: profileError } = await supabaseAdmin.from("profiles").upsert({
+      id: data.user.id,
+      email: data.user.email || email,
+      phone: data.user.phone || null,
+      role: "COMPANY",
+      registration_completed: false,
+    });
 
-export async function resendMagicLinkAction(formData: FormData) {
-  return sendJoinLinkAction(formData);
+    if (profileError) {
+      redirect(
+        `/check-email?email=${encodeURIComponent(email)}&role=company&error=${encodeURIComponent(profileError.message)}`,
+      );
+    }
+  }
+
+  redirect("/complete-registration");
 }
 
 export async function sendDriverOtpAction(formData: FormData) {

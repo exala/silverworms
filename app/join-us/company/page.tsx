@@ -16,7 +16,7 @@ export default async function CompanyJoinPage(props: {
         Enter your email to start company registration.
       </h1>
       <p className="mt-4 text-base leading-8 text-silver-600">
-        We will send a temporary verification link. After activation, your team can
+        We will send a one-time verification code. After activation, your team can
         fill in company profile, NTN, and FBR details.
       </p>
       {searchParams.error ? (
@@ -31,10 +31,10 @@ export default async function CompanyJoinPage(props: {
           <input name="email" placeholder="company@example.com" required type="email" />
         </label>
         <PendingSubmitButton
-          idleLabel="Send activation email"
+          idleLabel="Send verification code"
           pendingLabel="Sending email..."
         />
-        <FormPendingOverlay label="Sending your company activation link..." />
+        <FormPendingOverlay label="Sending your company verification code..." />
       </form>
     </section>
   );

@@ -1,13 +1,14 @@
-import Link from "next/link";
-import { resendMagicLinkAction } from "@/app/actions/auth";
+import { verifyCompanyEmailOtpAction } from "@/app/actions/auth";
+import { CheckEmailResend } from "@/components/check-email-resend";
 import { FormPendingOverlay, PendingSubmitButton } from "@/components/form-status";
 
 export default async function CheckEmailPage(props: {
-  searchParams: Promise<{ email?: string; role?: string }>;
+  searchParams: Promise<{ email?: string; error?: string; expires?: string; role?: string }>;
 }) {
   const searchParams = await props.searchParams;
   const email = searchParams.email || "";
   const role = (searchParams.role || "").toUpperCase();
+  const expires = Number.parseInt(searchParams.expires || "60", 10);
 
   return (
     <section className="mx-auto mt-8 w-[min(780px,calc(100%-2rem))] rounded-[2rem] border border-white/70 bg-white/80 p-6 shadow-haze backdrop-blur-xl md:p-8">
@@ -15,23 +16,43 @@ export default async function CheckEmailPage(props: {
         Check Email
       </p>
       <h1 className="mt-4 text-4xl font-semibold tracking-[-0.05em] text-silver-900">
-        We sent your activation link.
+        Enter the OTP sent to your email.
       </h1>
       <p className="mt-4 text-base leading-8 text-silver-600">
-        Please open the message sent to <strong>{email}</strong> and use the temporary
-        verification link. After that, you will continue to the full registration
-        form.
+        We sent a one-time code to <strong>{email}</strong>. Use it within{" "}
+        {Number.isNaN(expires) ? 60 : expires} seconds to continue company
+        registration.
       </p>
-      <form action={resendMagicLinkAction} className="mt-6">
+      {searchParams.error ? (
+        <p className="mt-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
+          {searchParams.error}
+        </p>
+      ) : null}
+      <form action={verifyCompanyEmailOtpAction} className="mt-6 space-y-5">
         <input name="email" type="hidden" value={email} />
         <input name="role" type="hidden" value={role} />
+        <label className="grid gap-2 text-sm font-semibold text-silver-700">
+          OTP
+          <input
+            autoComplete="one-time-code"
+            inputMode="numeric"
+            maxLength={6}
+            name="token"
+            placeholder="123456"
+            required
+          />
+        </label>
         <PendingSubmitButton
-          className="inline-flex min-h-14 items-center justify-center rounded-full border border-silver-200 bg-white px-7 py-4 text-sm font-semibold text-silver-800 transition hover:border-silver-300 hover:bg-silver-50"
-          idleLabel="Resend email"
-          pendingLabel="Resending..."
+          idleLabel="Verify and continue"
+          pendingLabel="Verifying..."
         />
-        <FormPendingOverlay label="Sending another verification email..." />
+        <FormPendingOverlay label="Verifying your company email..." />
       </form>
+      <CheckEmailResend
+        email={email}
+        role={role}
+        initialSeconds={Number.isNaN(expires) ? 60 : expires}
+      />
     </section>
   );
 }
