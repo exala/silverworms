@@ -13,9 +13,9 @@ export default function HomePage() {
               We put your ad where people are.
             </h1>
             <p className="mt-5 max-w-2xl text-base leading-8 text-silver-600 md:text-lg">
-              SILVERWORMS helps drivers earn passive income by running LED
-              campaigns on approved in-car passenger screens, while brands gain
-              constant public visibility with people already on the move.
+              SILVERWORMS help brands gain constant public visibility with people
+              already on the move by running campaigns on approved in-car passenger
+              screens and also help the drivers earn passive income
             </p>
           </div>
           <div className="flex flex-wrap gap-4">
