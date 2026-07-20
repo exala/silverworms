@@ -74,18 +74,23 @@ export function SiteFooter() {
           <h4 className="mb-3 font-semibold text-silver-900">Support</h4>
           <ul className="space-y-2 text-sm text-silver-600">
             <li>
-              <Link href="/help" className="hover:text-silver-900">
+              <Link href="/help-center" className="hover:text-silver-900">
                 Help Center
               </Link>
             </li>
             <li>
-              <Link href="/support" className="hover:text-silver-900">
+              <Link href="/contact-support" className="hover:text-silver-900">
                 Contact Support
               </Link>
             </li>
             <li>
               <Link href="/report-issue" className="hover:text-silver-900">
                 Report an Issue
+              </Link>
+            </li>
+            <li>
+              <Link href="/faqs" className="hover:text-silver-900">
+                FAQs
               </Link>
             </li>
           </ul>
